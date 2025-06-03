@@ -1,0 +1,83 @@
+// src/components/students/StudentForm.jsx
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
+
+function StudentForm({ onStudentAdded, studentToEdit }) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [grade, setGrade] = useState('');
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (studentToEdit) {
+      setName(studentToEdit.name);
+      setEmail(studentToEdit.email);
+      setDateOfBirth(studentToEdit.dateOfBirth || ''); // Handle potentially null date
+      setGrade(studentToEdit.grade || '');
+    } else {
+      // Reset form if not editing
+      setName('');
+      setEmail('');
+      setDateOfBirth('');
+      setGrade('');
+    }
+  }, [studentToEdit]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const studentData = { name, email, dateOfBirth, grade };
+
+    try {
+      if (studentToEdit) {
+        // Update existing student
+        await api.put(`/students/${studentToEdit._id}`, studentData);
+        onStudentAdded(); // Refresh student list
+        alert('Student updated successfully!');
+      } else {
+        // Create new student
+        await api.post('/students', studentData);
+        onStudentAdded(); // Refresh student list
+        alert('Student added successfully!');
+      }
+      // Clear form after successful submission
+      setName('');
+      setEmail('');
+      setDateOfBirth('');
+      setGrade('');
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not save student');
+      console.error(err);
+    }
+  };
+
+  return (
+    <div>
+      <h3>{studentToEdit ? 'Edit Student' : 'Add New Student'}</h3>
+      {error && <div style={{ color: 'red' }}>{error}</div>}
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Name:</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+        <div>
+          <label>Email:</label>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <label>Date of Birth:</label>
+          <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
+        </div>
+        <div>
+          <label>Grade:</label>
+          <input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} />
+        </div>
+        <button type="submit">{studentToEdit ? 'Update Student' : 'Add Student'}</button>
+      </form>
+    </div>
+  );
+}
+
+export default StudentForm;
